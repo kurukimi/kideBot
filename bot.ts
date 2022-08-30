@@ -34,10 +34,11 @@ export const createJob = async (url: string, token: string, ctx: any) => {
     const time = timeData.model.product.dateSalesFrom;
     const dateSales = new Date(time);
     const dateNow = new Date().getTime();
+	
     const id = crypto.randomUUID();
     const obj: JobData = {
-      date: dateSales.toLocaleDateString(),
-			time: `${dateSales.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+      date: dateSales.toDateString(),
+			time: `${dateSales.toTimeString()}`,
       jobName: timeData.model.product.name,
 			chatId: ctx.chat.id,
 			token: token,
