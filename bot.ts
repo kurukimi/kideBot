@@ -37,8 +37,12 @@ export const createJob = async (url: string, token: string, ctx: any) => {
 	
     const id = crypto.randomUUID();
     const obj: JobData = {
-      date: [dateSales.getDate(), dateSales.getMonth()+1, dateSales.getFullYear()].join('.'),
-			time: [dateSales.getHours(), dateSales.getMinutes()].join(':'),
+      date: [
+				("00" + dateSales.getDate()).slice(-2),
+				("00" + (dateSales.getMonth() + 1)).slice(-2),
+				dateSales.getFullYear()].join('.'),
+			time: [("00" + dateSales.getHours()).slice(-2),
+			 ("00" + dateSales.getMinutes()).slice(-2)].join(':'),
       jobName: timeData.model.product.name,
 			chatId: ctx.chat.id,
 			token: token,
