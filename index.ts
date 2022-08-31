@@ -50,12 +50,11 @@ bot.command('reserve', (ctx) => {
 
 bot.command('jobs', (ctx) => {
 	const jobs = getJobs(ctx.chat.id.toString());
-	const jobKeys = Markup.inlineKeyboard(
-		jobs.map(x => Markup.button.callback(x.jobName + ' ' + x.date, x.id))
-	)
 	console.log(jobs);
 	(jobs?.length > 0) ?
-	ctx.telegram.sendMessage(ctx.chat.id, "Click jobs to delete", jobKeys)
+	ctx.telegram.sendMessage(ctx.chat.id, "Click jobs to delete",  Markup.inlineKeyboard(
+		jobs.map(x => Markup.button.callback(x.jobName + ' ' + x.date, x.id))
+	))
 	:
 	ctx.reply('Job list empty')
 });
