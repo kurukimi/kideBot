@@ -4,7 +4,7 @@ import { createJob, getJobs, removeJob} from './bot';
 import {TokenDict} from './types'
 
 const token: string = process.env.BOT_TOKEN as string;
-const allowed: Array<Number> = []
+const allowed: Array<Number> = [1319284792]
 
 
 export const telegram: Telegram = new Telegram(token);
@@ -20,7 +20,7 @@ bot.use(async (ctx, next) => {
 	if (userId && allowed.includes(userId)) {
 		await next()
 	} else {
-		ctx.reply('not allowed')
+		ctx.reply('User not allowed.')
 	}
 })
 

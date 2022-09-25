@@ -4,7 +4,7 @@ exports.telegram = void 0;
 const telegraf_1 = require("telegraf");
 const bot_1 = require("./bot");
 const token = process.env.BOT_TOKEN;
-const allowed = [];
+const allowed = [1319284792];
 exports.telegram = new telegraf_1.Telegram(token);
 const bot = new telegraf_1.Telegraf(token);
 const tokens = {};
@@ -15,7 +15,7 @@ bot.use(async (ctx, next) => {
         await next();
     }
     else {
-        ctx.reply('not allowed');
+        ctx.reply('User not allowed.');
     }
 });
 bot.start((ctx) => {
