@@ -13,7 +13,7 @@ bot.use(async (ctx, next) => {
     const userId = ctx.from?.id;
     console.log(userId);
     if (userId) {
-        const { rows } = await elephantDb_1.db.query(`SELECT id FROM users WHERE id = '$1'`, [userId.toString()]);
+        const { rows } = await elephantDb_1.db.query('SELECT id FROM users WHERE id = $1', [userId.toString()]);
         console.log(rows);
         rows.length > 0 ? await next() : ctx.reply('User not allowed.');
     }
@@ -25,19 +25,25 @@ bot.help(async (ctx) => {
     ctx.reply('use /token to set kide tokeni');
     ctx.reply('use /reserve {URL} to create a reserve job');
     ctx.reply('use /jobs to see current and sceduled jobs');
-    console.log(tokens);
 });
-bot.command('token', (ctx) => {
+bot.command('token', async (ctx) => {
     const user = ctx.message.from.id.toString();
     const token = ctx.message.text.replace('/token', '').trim();
-    tokens[user] = token;
-    ctx.reply(`token registered`);
+    try {
+        await elephantDb_1.db.query('UPDATE users SET token = $1 WHERE id = $2', [token, user]);
+        ctx.reply(`token registered`);
+    }
+    catch (e) {
+        console.log(e);
+        ctx.reply(`Couldn't register token`);
+    }
 });
-bot.command('reserve', (ctx) => {
+bot.command('reserve', async (ctx) => {
     const user = ctx.message.from.id.toString();
-    if (tokens[user]) {
+    const { rows } = await elephantDb_1.db.query('SELECT token FROM users WHERE id = $1', [user]);
+    if (rows.length > 0 && rows[0].token) {
         const url = ctx.message.text.replace('/reserve', '').trim();
-        (0, bot_1.createJob)(url, tokens[user], ctx);
+        (0, bot_1.createJob)(url, rows[0].token, ctx);
     }
     else {
         ctx.reply('No token found! Add a token first');
