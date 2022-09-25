@@ -1,7 +1,9 @@
 
-import { Context, Markup, Telegraf, Telegram } from 'telegraf';
+import { Markup, Telegraf, Telegram } from 'telegraf';
 import { createJob, getJobs, removeJob} from './bot';
-import {TokenDict} from './types'
+import { TokenDict } from './types'
+import { db } from './elephantDb'
+
 
 const token: string = process.env.BOT_TOKEN as string;
 const allowed: Array<Number> = [1319284792, 2080770254]
@@ -15,12 +17,13 @@ const bot = new Telegraf(token);
 const tokens: TokenDict = {}
 
 bot.use(async (ctx, next) => {
-	const userId = ctx.message?.from.id
+	const userId = ctx.from?.id
 	console.log(userId)
-	if (userId && allowed.includes(userId)) {
-		await next()
-	} else {
-		ctx.reply('User not allowed.')
+	if (userId) {
+		const { rows } = await db.query(`SELECT id FROM users WHERE id = '$1'`, [userId.toString()])
+		console.log(rows)
+		rows.length > 0 ? await next() : ctx.reply('User not allowed.')
+		
 	}
 })
 
