@@ -20,7 +20,7 @@ bot.use(async (ctx, next) => {
 	const userId = ctx.from?.id
 	console.log(userId)
 	if (userId) {
-		const { rows } = await db.query(`SELECT id FROM users WHERE id = '$1'`, [userId.toString()])
+		const { rows } = await db.query('SELECT id FROM users WHERE id = $1', [userId.toString()])
 		console.log(rows)
 		rows.length > 0 ? await next() : ctx.reply('User not allowed.')
 		
