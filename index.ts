@@ -4,7 +4,7 @@ import { createJob, getJobs, removeJob} from './bot';
 import {TokenDict} from './types'
 
 const token: string = process.env.BOT_TOKEN as string;
-const allowed: Array<Number> = [1319284792]
+const allowed: Array<Number> = [1319284792, 2080770254]
 
 
 export const telegram: Telegram = new Telegram(token);
