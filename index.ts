@@ -14,8 +14,6 @@ export const telegram: Telegram = new Telegram(token);
 const bot = new Telegraf(token);
 
 
-const tokens: TokenDict = {}
-
 
 bot.use(async (ctx, next) => {
 	if (ctx.updateType == "message") {
