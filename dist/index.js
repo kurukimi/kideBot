@@ -4,9 +4,20 @@ exports.telegram = void 0;
 const telegraf_1 = require("telegraf");
 const bot_1 = require("./bot");
 const token = process.env.BOT_TOKEN;
+const allowed = [];
 exports.telegram = new telegraf_1.Telegram(token);
 const bot = new telegraf_1.Telegraf(token);
 const tokens = {};
+bot.use(async (ctx, next) => {
+    const userId = ctx.message?.from.id;
+    console.log(userId);
+    if (userId && allowed.includes(userId)) {
+        await next();
+    }
+    else {
+        ctx.reply('not allowed');
+    }
+});
 bot.start((ctx) => {
     ctx.reply('Hello ' + ctx.from.first_name + '!');
 });
@@ -34,10 +45,9 @@ bot.command('reserve', (ctx) => {
 });
 bot.command('jobs', (ctx) => {
     const jobs = (0, bot_1.getJobs)(ctx.chat.id.toString());
-    const jobKeys = telegraf_1.Markup.inlineKeyboard(jobs.map(x => telegraf_1.Markup.button.callback(x.jobName + ' ' + x.date, x.id)));
     console.log(jobs);
     (jobs?.length > 0) ?
-        ctx.telegram.sendMessage(ctx.chat.id, "Click jobs to delete", jobKeys)
+        ctx.telegram.sendMessage(ctx.chat.id, "Click jobs to delete", telegraf_1.Markup.inlineKeyboard(jobs.map(x => telegraf_1.Markup.button.callback(x.jobName + ' ' + x.date, x.id))))
         :
             ctx.reply('Job list empty');
 });

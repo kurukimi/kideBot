@@ -21,15 +21,14 @@ const createJob = async (url, token, ctx) => {
         const dateNow = new Date().getTime();
         const id = crypto_1.default.randomUUID();
         const obj = {
-            date: dateSales.toLocaleDateString(),
-            time: `${dateSales.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+            date: dateSales.toLocaleString('fi-FI', { timeZone: 'Europe/Helsinki' }),
             jobName: timeData.model.product.name,
             chatId: ctx.chat.id,
             token: token,
             id: id
         };
         jobsByChat[obj.chatId] = [...(jobsByChat[obj.chatId] ? jobsByChat[obj.chatId] : []), obj];
-        ctx.reply(`job "${obj.jobName}" scheduled at ${obj.date} ${obj.time}`);
+        ctx.reply(`job "${obj.jobName}" scheduled at ${obj.date}`);
         if (dateNow < dateSales.getTime()) {
             const tOut = setTimeout(exports.requestLoop, (dateSales.getTime() - dateNow), urlSuffix, obj, ctx);
             jobs[id] = tOut;
@@ -78,6 +77,10 @@ const requestLoop = async (urlSuffix, obj, ctx) => {
     let success = false;
     let currJobs = jobsByChat[ctx.chat.id];
     ctx.reply(`job "${obj.jobName}" started`);
+    setTimeout(() => {
+        success = true;
+        ctx.reply(`Job ${obj.jobName} stopped, because couldn't get ticket id in 3 minutes`);
+    }, 180000);
     while (!success && (currJobs.some(x => x.id === obj.id))) {
         const data = await getData(urlSuffix);
         success = await sendRequest(data, obj, ctx);
