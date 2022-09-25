@@ -1,19 +1,28 @@
 
 import { Context, Markup, Telegraf, Telegram } from 'telegraf';
-import { Update } from 'typegram';
 import { createJob, getJobs, removeJob} from './bot';
+import {TokenDict} from './types'
 
 const token: string = process.env.BOT_TOKEN as string;
+const allowed: Array<Number> = []
 
-interface TokenDict {
-	[key: string]: string
-}
 
 export const telegram: Telegram = new Telegram(token);
 
 const bot = new Telegraf(token);
 
+
 const tokens: TokenDict = {}
+
+bot.use(async (ctx, next) => {
+	const userId = ctx.message?.from.id
+	console.log(userId)
+	if (userId && allowed.includes(userId)) {
+		await next()
+	} else {
+		ctx.reply('not allowed')
+	}
+})
 
 bot.start((ctx) => {
 	ctx.reply('Hello ' + ctx.from.first_name + '!');
@@ -26,8 +35,6 @@ bot.help( async (ctx) => {
 	console.log(tokens)
 
 });
-
-
 
 bot.command('token', (ctx) => {
 	const user = ctx.message.from.id.toString()

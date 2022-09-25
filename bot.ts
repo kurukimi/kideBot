@@ -1,23 +1,7 @@
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
 import crypto from 'crypto';
-import { Context } from 'telegraf';
+import {Job, JobsByChat, JobData} from './types'
 
-interface Job {
-	[key: string]: NodeJS.Timeout
-}
-
-interface JobData {
-	date: string;
-	jobName: string;
-	id: string;
-	chatId: number;
-	token: string
-
-}
-
-interface JobsByChat {
-	[key: string]: Array<JobData>
-}
 
 const jobs: Job = {}
 const jobsByChat: JobsByChat = {}
@@ -29,30 +13,30 @@ export const getJobs = (chatId: string) => {
 export const createJob = async (url: string, token: string, ctx: any) => {
 	try {
 		const urlSuffix = getUrlSuffix(url)
-    const timeData = await getData(urlSuffix);
-    const time = timeData.model.product.dateSalesFrom;
-    const dateSales = new Date(time);
-    const dateNow = new Date().getTime();
+	const timeData = await getData(urlSuffix);
+	const time = timeData.model.product.dateSalesFrom;
+	const dateSales = new Date(time);
+	const dateNow = new Date().getTime();
 	
-    const id = crypto.randomUUID();
-    const obj: JobData = {
-      date: dateSales.toLocaleString('fi-FI', {timeZone: 'Europe/Helsinki'}),
-      jobName: timeData.model.product.name,
+	const id = crypto.randomUUID();
+	const obj: JobData = {
+	  date: dateSales.toLocaleString('fi-FI', {timeZone: 'Europe/Helsinki'}),
+	  jobName: timeData.model.product.name,
 			chatId: ctx.chat.id,
 			token: token,
 			id: id
-    };
+	};
 		jobsByChat[obj.chatId] = [...(jobsByChat[obj.chatId] ? jobsByChat[obj.chatId] : []), obj]
 		ctx.reply(`job "${obj.jobName}" scheduled at ${obj.date}`)
-    if (dateNow < dateSales.getTime()) {
-      const tOut = setTimeout(requestLoop, (dateSales.getTime() - dateNow), urlSuffix, obj, ctx);
+	if (dateNow < dateSales.getTime()) {
+	  const tOut = setTimeout(requestLoop, (dateSales.getTime() - dateNow), urlSuffix, obj, ctx);
 			jobs[id] = tOut;
-    } else {
-      requestLoop(urlSuffix, obj, ctx);
-    }
+	} else {
+	  requestLoop(urlSuffix, obj, ctx);
+	}
   } catch (err) {
 		console.log(err)
-    console.log('invalid url');
+	console.log('invalid url');
   }
 }
 
@@ -94,6 +78,10 @@ export const requestLoop = async (urlSuffix: string, obj: JobData, ctx: any) => 
 	let success = false;
 	let currJobs = jobsByChat[ctx.chat.id]
 	ctx.reply(`job "${obj.jobName}" started`)
+	setTimeout(() => {
+		success = true;
+		ctx.reply(`Job ${obj.jobName} stopped, because couldn't get ticket id in 3 minutes`);
+		}, 180000)
 	while (!success && (currJobs.some(x => x.id === obj.id))) {
 		const data = await getData(urlSuffix);
 		success = await sendRequest(data, obj, ctx);
@@ -108,10 +96,10 @@ export const requestLoop = async (urlSuffix: string, obj: JobData, ctx: any) => 
 
 const sendRequest = async (data: kideResponse, obj: JobData, ctx: any) => {
 	try {
-    return await requestJob(data, obj, ctx);
+	return await requestJob(data, obj, ctx);
   } catch (e) {
-    console.log(e as Error);
-    await new Promise((resolve) => setTimeout(resolve, 500))
+	console.log(e as Error);
+	await new Promise((resolve) => setTimeout(resolve, 500))
 		return false
   }
 }
@@ -132,19 +120,19 @@ const requestJob = async (data: kideResponse, obj: JobData, ctx: any) => {
   if (!variant || variant.length === 0) throw 'no inventory id';
 	let message: string[] = []
   await Promise.all(variant.map(async (el) => {
-    
-    if (el.inventoryId) {
-      const toBuy = el.productVariantMaximumReservableQuantity;
-      const invId = el.inventoryId;
-      const success = await buyTicket(invId, toBuy, obj, ctx);
-      if (success) message.push('Reserved ' + toBuy + 'x: ' + el.name);
-      else tryOne.push({id: invId, name: el.name});
-    } else throw 'no inventory id'
-    
+	
+	if (el.inventoryId) {
+	  const toBuy = el.productVariantMaximumReservableQuantity;
+	  const invId = el.inventoryId;
+	  const success = await buyTicket(invId, toBuy, obj, ctx);
+	  if (success) message.push('Reserved ' + toBuy + 'x: ' + el.name);
+	  else tryOne.push({id: invId, name: el.name});
+	} else throw 'no inventory id'
+	
    
   }));
   await Promise.all(tryOne.map(async (x) => {
-    const success = await buyTicket(x.id, 1, obj, ctx);
+	const success = await buyTicket(x.id, 1, obj, ctx);
 		if (success) message.push('Reserved 1x ' + x.name)
 		else message.push('Couldn\'t buy ' + x.name)
   }));
