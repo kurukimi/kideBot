@@ -10,12 +10,14 @@ exports.telegram = new telegraf_1.Telegram(token);
 const bot = new telegraf_1.Telegraf(token);
 const tokens = {};
 bot.use(async (ctx, next) => {
-    const userId = ctx.from?.id;
-    console.log(userId);
-    if (userId) {
-        const { rows } = await elephantDb_1.db.query('SELECT id FROM users WHERE id = $1', [userId.toString()]);
-        console.log(rows);
-        rows.length > 0 ? await next() : ctx.reply('User not allowed.');
+    if (ctx.updateType == "message") {
+        const userId = ctx.message?.from?.id;
+        console.log(userId);
+        if (userId) {
+            const { rows } = await elephantDb_1.db.query('SELECT id FROM users WHERE id = $1', [userId.toString()]);
+            console.log(rows);
+            rows.length > 0 ? await next() : ctx.reply('User not allowed.');
+        }
     }
 });
 bot.start((ctx) => {
