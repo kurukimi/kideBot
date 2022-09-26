@@ -8,7 +8,6 @@ const token = process.env.BOT_TOKEN;
 const allowed = [1319284792, 2080770254];
 exports.telegram = new telegraf_1.Telegram(token);
 const bot = new telegraf_1.Telegraf(token);
-const tokens = {};
 bot.use(async (ctx, next) => {
     if (ctx.updateType == "message") {
         const userId = ctx.message?.from?.id;

@@ -28,10 +28,10 @@ const createJob = async (url, token, ctx) => {
             id: id
         };
         jobsByChat[obj.chatId] = [...(jobsByChat[obj.chatId] ? jobsByChat[obj.chatId] : []), obj];
-        ctx.reply(`job "${obj.jobName}" scheduled at ${obj.date}`);
         if (dateNow < dateSales.getTime()) {
             const tOut = setTimeout(exports.requestLoop, (dateSales.getTime() - dateNow), urlSuffix, obj, ctx);
             jobs[id] = tOut;
+            ctx.reply(`job "${obj.jobName}" scheduled at ${obj.date}`);
         }
         else {
             (0, exports.requestLoop)(urlSuffix, obj, ctx);
@@ -77,7 +77,7 @@ const requestLoop = async (urlSuffix, obj, ctx) => {
     let success = false;
     let currJobs = jobsByChat[ctx.chat.id];
     ctx.reply(`job "${obj.jobName}" started`);
-    setTimeout(() => {
+    const jobTimeout = setTimeout(() => {
         success = true;
         ctx.reply(`Job ${obj.jobName} stopped, because couldn't get ticket id in 3 minutes`);
     }, 180000);
@@ -87,6 +87,7 @@ const requestLoop = async (urlSuffix, obj, ctx) => {
         currJobs = jobsByChat[ctx.chat.id];
     }
     if (success) {
+        clearTimeout(jobTimeout);
         (0, exports.removeJob)(obj.id, ctx.chat.id);
     }
 };
