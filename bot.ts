@@ -120,17 +120,15 @@ const requestJob = async (data: kideResponse, obj: JobData, ctx: any) => {
 	const tryOne: { id: string; name: string; }[] = [];
 	if (!variant || variant.length === 0) throw 'no inventory id';
 	let message: string[] = []
-	// for looppi
-	for (const el of variant) {
+	// for looppi ?
+	await Promise.all(variant.map(async (el) => {
 		if (el.inventoryId) {
 		const toBuy = el.productVariantMaximumReservableQuantity;
 		const invId = el.inventoryId;
 		const success = await buyTicket(invId, toBuy, obj, ctx);
 		if (success) message.push('Reserved ' + toBuy + 'x: ' + el.name);
 		else tryOne.push({id: invId, name: el.name});
-		} else throw 'no inventory id'
-	};
-
+		} else throw 'no inventory id'}));
 	await Promise.all(tryOne.map(async (x) => {
 	const success = await buyTicket(x.id, 1, obj, ctx);
 		if (success) message.push('Reserved 1x ' + x.name)
