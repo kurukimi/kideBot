@@ -5,16 +5,14 @@ const telegraf_1 = require("telegraf");
 const bot_1 = require("./bot");
 const elephantDb_1 = require("./elephantDb");
 const token = process.env.BOT_TOKEN;
-const allowed = [1319284792, 2080770254];
 exports.telegram = new telegraf_1.Telegram(token);
 const bot = new telegraf_1.Telegraf(token);
 bot.use(async (ctx, next) => {
     if (ctx.updateType == "message") {
         const userId = ctx.message?.from?.id;
-        console.log(userId);
+        console.log("user tried to access: " + userId);
         if (userId) {
             const { rows } = await elephantDb_1.db.query('SELECT id FROM users WHERE id = $1', [userId.toString()]);
-            console.log(rows);
             rows.length > 0 ? await next() : ctx.reply('User not allowed.');
         }
     }
@@ -61,6 +59,7 @@ bot.command('jobs', (ctx) => {
 bot.action(new RegExp('.*'), (ctx) => {
     console.log(ctx.chat?.id);
     const data = ctx.callbackQuery.data;
+    console.log(data);
     if (data && ctx.chat?.id)
         (0, bot_1.removeJob)(data, ctx.chat?.id);
     const jobs = (0, bot_1.getJobs)(ctx.chat?.id.toString() || "");

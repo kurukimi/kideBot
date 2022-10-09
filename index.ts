@@ -14,10 +14,9 @@ const bot = new Telegraf(token);
 bot.use(async (ctx, next) => {
 	if (ctx.updateType == "message") {
 		const userId = ctx.message?.from?.id
-		console.log(userId)
+		console.log("user tried to access: " + userId)
 		if (userId) {
 			const { rows } = await db.query('SELECT id FROM users WHERE id = $1', [userId.toString()])
-			console.log(rows)
 			rows.length > 0 ? await next() : ctx.reply('User not allowed.')
 		}
 	}

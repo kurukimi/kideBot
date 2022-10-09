@@ -82,7 +82,7 @@ export const requestLoop = async (urlSuffix: string, obj: JobData, ctx: any) => 
 	let currJobs = jobsByChat[ctx.chat.id]
 	ctx.reply(`job "${obj.jobName}" started`)
 	const jobTimeout = setTimeout(() => {
-		success = true;
+		timedOut = true;
 		ctx.reply(`Job ${obj.jobName} stopped, because couldn't get ticket id in 3 minutes`);
 		}, 180000)
 	while (!timedOut && !success && (currJobs.some(x => x.id === obj.id))) {
@@ -120,6 +120,7 @@ const requestJob = async (data: kideResponse, obj: JobData, ctx: any) => {
 		if (el.inventoryId) {
 			const toBuy = el.productVariantMaximumReservableQuantity;
 			const invId = el.inventoryId;
+			console.log("ticket")
 			const success = await buyTicket(invId, toBuy, obj, ctx);
 			if (success != 0) message.push('Reserved ' + toBuy + 'x: ' + el.name);
 			else message.push('Couldn\'t buy ' + el.name)

@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.requestLoop = exports.removeJob = exports.createJob = exports.getJobs = void 0;
 const axios_1 = __importDefault(require("axios"));
 const crypto_1 = __importDefault(require("crypto"));
+const requests_1 = require("./requests");
 const jobs = {};
 const jobsByChat = {};
 const getJobs = (chatId) => {
@@ -47,6 +48,7 @@ const removeJob = (id, chatId) => {
     jobsByChat[chatId] = jobsByChat[chatId].filter(x => x.id !== id);
     clearTimeout(jobs[id]);
     delete jobs[id];
+    console.log(jobsByChat);
 };
 exports.removeJob = removeJob;
 const getUrlSuffix = (url) => {
@@ -75,18 +77,19 @@ const getData = async (urlSuffix) => {
 };
 const requestLoop = async (urlSuffix, obj, ctx) => {
     let success = false;
+    let timedOut = false;
     let currJobs = jobsByChat[ctx.chat.id];
     ctx.reply(`job "${obj.jobName}" started`);
     const jobTimeout = setTimeout(() => {
         success = true;
         ctx.reply(`Job ${obj.jobName} stopped, because couldn't get ticket id in 3 minutes`);
     }, 180000);
-    while (!success && (currJobs.some(x => x.id === obj.id))) {
+    while (!timedOut && !success && (currJobs.some(x => x.id === obj.id))) {
         const data = await getData(urlSuffix);
         success = await sendRequest(data, obj, ctx);
         currJobs = jobsByChat[ctx.chat.id];
     }
-    if (success) {
+    if (success || timedOut) {
         clearTimeout(jobTimeout);
         (0, exports.removeJob)(obj.id, ctx.chat.id);
     }
@@ -104,57 +107,41 @@ const sendRequest = async (data, obj, ctx) => {
 };
 const requestJob = async (data, obj, ctx) => {
     const variant = data.model.variants;
-    const tryOne = [];
     if (!variant || variant.length === 0)
         throw 'no inventory id';
     let message = [];
+    // for looppi ?
+    // lähetä ensin yks
     await Promise.all(variant.map(async (el) => {
         if (el.inventoryId) {
             const toBuy = el.productVariantMaximumReservableQuantity;
             const invId = el.inventoryId;
+            console.log("ticket");
             const success = await buyTicket(invId, toBuy, obj, ctx);
-            if (success)
+            if (success != 0)
                 message.push('Reserved ' + toBuy + 'x: ' + el.name);
             else
-                tryOne.push({ id: invId, name: el.name });
+                message.push('Couldn\'t buy ' + el.name);
         }
         else
             throw 'no inventory id';
     }));
-    await Promise.all(tryOne.map(async (x) => {
-        const success = await buyTicket(x.id, 1, obj, ctx);
-        if (success)
-            message.push('Reserved 1x ' + x.name);
-        else
-            message.push('Couldn\'t buy ' + x.name);
-    }));
     ctx.reply(message.join("\n"));
     return true;
 };
-const buyTicket = async (inventoryId, amount, obj, ctx) => {
+const buyTicket = async (invId, amount, obj, ctx) => {
     try {
-        const res = await axios_1.default.post('https://api.kide.app/api/reservations', `{"toCreate":[{"inventoryId":"${inventoryId}","quantity":${amount}}],"toCancel":null}`, {
-            'headers': {
-                'accept': 'application/json, text/plain, */*',
-                'accept-language': 'fi-FI,fi;q=0.9,sv;q=0.8,en;q=0.7',
-                'authorization': `Bearer ${obj.token}`,
-                'content-type': 'application/json;charset=UTF-8',
-                'sec-ch-ua': '" Not A;Brand";v="99", "Chromium";v="99", "Google Chrome";v="99"',
-                'sec-ch-ua-mobile': '?0',
-                'sec-ch-ua-platform': '"Windows"',
-                'sec-fetch-dest': 'empty',
-                'sec-fetch-mode': 'cors',
-                'sec-fetch-site': 'same-site',
-                'x-requested-with': 'XMLHttpRequest',
-                'Referer': 'https://kide.app/',
-                'Referrer-Policy': 'strict-origin-when-cross-origin',
-            },
-        });
-        return res.status === 200;
+        const [resOne, resAmount] = await Promise.all([(0, requests_1.buyRequest)(invId, 1, obj), (0, requests_1.buyRequest)(invId, amount, obj)]);
+        if (resAmount.status === 200)
+            return amount;
+        else if (resOne.status === 200)
+            return 1;
+        else
+            return 0;
     }
     catch (e) {
         if (axios_1.default.isAxiosError(e))
             e?.response?.status === 401 && ctx.reply("Request failed. Your token is probably wrong");
-        return false;
+        return 0;
     }
 };
