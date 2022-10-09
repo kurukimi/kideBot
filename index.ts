@@ -1,14 +1,10 @@
 
 import { Markup, Telegraf, Telegram } from 'telegraf';
 import { createJob, getJobs, removeJob} from './bot';
-import { TokenDict } from './types'
 import { db } from './elephantDb'
 
 
 const token: string = process.env.BOT_TOKEN as string;
-const allowed: Array<Number> = [1319284792, 2080770254]
-
-
 export const telegram: Telegram = new Telegram(token);
 
 const bot = new Telegraf(token);
@@ -75,6 +71,7 @@ bot.command('jobs', (ctx) => {
 bot.action(new RegExp('.*'), (ctx) => {
 	console.log(ctx.chat?.id)
 	const data = ctx.callbackQuery.data
+	console.log(data)
 	if (data && ctx.chat?.id) removeJob(data, ctx.chat?.id)
 	const jobs = getJobs(ctx.chat?.id.toString() || "");
 	const jobKeys = Markup.inlineKeyboard(

@@ -18,3 +18,13 @@ export interface JobData {
 export interface JobsByChat {
 	[key: string]: Array<JobData>
 }
+
+export interface kideResponse {
+	model: {
+		variants: {
+		productVariantMaximumReservableQuantity: number;
+		inventoryId: string;
+		name: string
+		}[]
+	}
+}
