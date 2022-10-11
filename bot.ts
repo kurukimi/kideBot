@@ -21,7 +21,7 @@ export const createJob = async (url: string, token: string, ctx: any) => {
 		const obj: JobData = {
 				date: dateSales.toLocaleString('fi-FI', {timeZone: 'Europe/Helsinki'}),
 				jobName: timeData.model.product.name,
-				userId: ctx.user.id,
+				userId: ctx.chat.id,
 				token: token,
 				id: id
 		};
