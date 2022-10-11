@@ -1,7 +1,7 @@
 import axios from 'axios';
 import crypto from 'crypto';
 import {Job, JobsByChat, JobData, kideResponse} from './types';
-import { buyRequest } from './requests';
+import { buyRequest, dataRequest } from './requests';
 
 
 const jobs: Job = {}
@@ -17,17 +17,16 @@ export const createJob = async (url: string, token: string, ctx: any) => {
 		const timeData = await getData(urlSuffix);
 		const time = timeData.model.product.dateSalesFrom;
 		const dateSales = new Date(time);
-		const dateNow = new Date().getTime();
-		
 		const id = crypto.randomUUID();
 		const obj: JobData = {
 				date: dateSales.toLocaleString('fi-FI', {timeZone: 'Europe/Helsinki'}),
 				jobName: timeData.model.product.name,
-				chatId: ctx.chat.id,
+				userId: ctx.user.id,
 				token: token,
 				id: id
 		};
-		jobsByChat[obj.chatId] = [...(jobsByChat[obj.chatId] ? jobsByChat[obj.chatId] : []), obj]
+		jobsByChat[obj.userId] = [...(jobsByChat[obj.userId] ? jobsByChat[obj.userId] : []), obj]
+		const dateNow = new Date().getTime();
 		if (dateNow < dateSales.getTime()) {
 			const tOut = setTimeout(requestLoop, (dateSales.getTime() - dateNow), urlSuffix, obj, ctx);
 			jobs[id] = tOut;
@@ -55,45 +54,26 @@ const getUrlSuffix = (url: string) => {
 }
 
 const getData = async (urlSuffix: string) => {
-	const res = await axios.get(
-		`https://api.kide.app/api/products/${urlSuffix}`,
-		{
-			headers: {
-			'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
-			'accept-language': 'fi-FI,fi;q=0.9,sv;q=0.8,en;q=0.7',
-			'cache-control': 'max-age=0',
-			'sec-ch-ua': '" Not A;Brand";v="99", "Chromium";v="99", "Google Chrome";v="99"',
-			'sec-ch-ua-mobile': '?0',
-			'sec-ch-ua-platform': '"Windows"',
-			'sec-fetch-dest': 'document',
-			'sec-fetch-mode': 'navigate',
-			'sec-fetch-site': 'none',
-			'sec-fetch-user': '?1',
-			'upgrade-insecure-requests': '1',
-			},
-		}
-	);
+	const res = await dataRequest(urlSuffix)
   return res.data;
 }
 
 export const requestLoop = async (urlSuffix: string, obj: JobData, ctx: any) => {
 	let success = false;
 	let timedOut = false
-	let currJobs = jobsByChat[ctx.chat.id]
 	ctx.reply(`job "${obj.jobName}" started`)
 	const jobTimeout = setTimeout(() => {
 		timedOut = true;
-		ctx.reply(`Job ${obj.jobName} stopped, because couldn't get ticket id in 3 minutes`);
-		}, 180000)
-	while (!timedOut && !success && (currJobs.some(x => x.id === obj.id))) {
+		ctx.reply(`Job ${obj.jobName} stopped, because couldn't get ticket id in 2 minutes`);
+		}, 120000)
+	while (!timedOut && !success && (jobsByChat[ctx.chat.id].some(x => x.id === obj.id))) {
 		const data = await getData(urlSuffix);
 		success = await sendRequest(data, obj, ctx);
-		currJobs = jobsByChat[ctx.chat.id]
 	}
 	if (success || timedOut) {
-		clearTimeout(jobTimeout)
 		removeJob(obj.id, ctx.chat.id)
-	}
+	} 
+	clearTimeout(jobTimeout)
 	
 }
 
@@ -127,6 +107,7 @@ const requestJob = async (data: kideResponse, obj: JobData, ctx: any) => {
 		}
 		else throw 'no inventory id'
 	}));
+	
 	ctx.reply(message.join("\n"))
 	return true;
 }

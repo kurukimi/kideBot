@@ -12,14 +12,15 @@ const bot = new Telegraf(token);
 
 
 bot.use(async (ctx, next) => {
-	if (ctx.updateType == "message") {
+	if (ctx.updateType == "message" || ctx.updateType == "callback_query") {
 		const userId = ctx.message?.from?.id
 		console.log("user tried to access: " + userId)
 		if (userId) {
 			const { rows } = await db.query('SELECT id FROM users WHERE id = $1', [userId.toString()])
-			rows.length > 0 ? await next() : ctx.reply('User not allowed.')
+			rows.length > 0 ? next() : ctx.reply('User not allowed.')
 		}
-	}
+	} 
+	
 })
 
 bot.start((ctx) => {
@@ -29,7 +30,7 @@ bot.start((ctx) => {
 bot.help( async (ctx) => {
 	ctx.reply('use /token to set kide tokeni');
 	ctx.reply('use /reserve {URL} to create a reserve job');
-	ctx.reply('use /jobs to see current and sceduled jobs')
+	ctx.reply('use /jobs to see or delete current and sceduled jobs')
 });
 
 bot.command('token', async (ctx) => {
@@ -60,7 +61,7 @@ bot.command('jobs', (ctx) => {
 	const jobs = getJobs(ctx.chat.id.toString());
 	console.log(jobs);
 	(jobs?.length > 0) ?
-	ctx.telegram.sendMessage(ctx.chat.id, "Click jobs to delete",  Markup.inlineKeyboard(
+	ctx.reply("Click jobs to delete",  Markup.inlineKeyboard(
 		jobs.map(x => Markup.button.callback(x.jobName + ' ' + x.date, x.id))
 	))
 	:

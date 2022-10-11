@@ -10,7 +10,7 @@ export interface JobData {
 	date: string;
 	jobName: string;
 	id: string;
-	chatId: number;
+	userId: number;
 	token: string
 
 }

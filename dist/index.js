@@ -13,9 +13,11 @@ bot.use(async (ctx, next) => {
         console.log("user tried to access: " + userId);
         if (userId) {
             const { rows } = await elephantDb_1.db.query('SELECT id FROM users WHERE id = $1', [userId.toString()]);
-            rows.length > 0 ? await next() : ctx.reply('User not allowed.');
+            rows.length > 0 ? next() : ctx.reply('User not allowed.');
         }
     }
+    else
+        next();
 });
 bot.start((ctx) => {
     ctx.reply('Hello ' + ctx.from.first_name + '!');
@@ -52,7 +54,7 @@ bot.command('jobs', (ctx) => {
     const jobs = (0, bot_1.getJobs)(ctx.chat.id.toString());
     console.log(jobs);
     (jobs?.length > 0) ?
-        ctx.telegram.sendMessage(ctx.chat.id, "Click jobs to delete", telegraf_1.Markup.inlineKeyboard(jobs.map(x => telegraf_1.Markup.button.callback(x.jobName + ' ' + x.date, x.id))))
+        ctx.reply("Click jobs to delete", telegraf_1.Markup.inlineKeyboard(jobs.map(x => telegraf_1.Markup.button.callback(x.jobName + ' ' + x.date, x.id))))
         :
             ctx.reply('Job list empty');
 });

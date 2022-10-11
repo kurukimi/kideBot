@@ -78,21 +78,19 @@ const getData = async (urlSuffix) => {
 const requestLoop = async (urlSuffix, obj, ctx) => {
     let success = false;
     let timedOut = false;
-    let currJobs = jobsByChat[ctx.chat.id];
     ctx.reply(`job "${obj.jobName}" started`);
     const jobTimeout = setTimeout(() => {
-        success = true;
-        ctx.reply(`Job ${obj.jobName} stopped, because couldn't get ticket id in 3 minutes`);
-    }, 180000);
-    while (!timedOut && !success && (currJobs.some(x => x.id === obj.id))) {
+        timedOut = true;
+        ctx.reply(`Job ${obj.jobName} stopped, because couldn't get ticket id in 2 minutes`);
+    }, 120000);
+    while (!timedOut && !success && (jobsByChat[ctx.chat.id].some(x => x.id === obj.id))) {
         const data = await getData(urlSuffix);
         success = await sendRequest(data, obj, ctx);
-        currJobs = jobsByChat[ctx.chat.id];
     }
     if (success || timedOut) {
-        clearTimeout(jobTimeout);
         (0, exports.removeJob)(obj.id, ctx.chat.id);
     }
+    clearTimeout(jobTimeout);
 };
 exports.requestLoop = requestLoop;
 const sendRequest = async (data, obj, ctx) => {
