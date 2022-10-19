@@ -121,7 +121,10 @@ const buyTicket = async (invId: string, amount: number, obj: JobData, ctx: any) 
 		if (resOne.status === 200) return 1
 		return 0
 	} catch (e) {
-			if (axios.isAxiosError(e)) e?.response?.status === 401 && ctx.reply("Request failed. Your token is probably wrong")
+			if (axios.isAxiosError(e)) {
+				console.log(e?.response?.status)
+				e?.response?.status === 401 && ctx.reply("Request failed. Your token is probably wrong")
+			}
 			console.log("request failed ")
 			return 0
 	}
