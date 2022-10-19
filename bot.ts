@@ -102,7 +102,7 @@ const requestJob = async (data: kideResponse, obj: JobData, ctx: any) => {
 			const invId = el.inventoryId;
 			console.log("ticket")
 			const success = await buyTicket(invId, toBuy, obj, ctx);
-			if (success != 0) message.push('Reserved ' + toBuy + 'x: ' + el.name);
+			if (success != 0) message.push('Reserved ' + success + 'x: ' + el.name);
 			else message.push('Couldn\'t buy ' + el.name)
 		}
 		else throw 'no inventory id'
@@ -115,12 +115,14 @@ const requestJob = async (data: kideResponse, obj: JobData, ctx: any) => {
 
 const buyTicket = async (invId: string, amount: number, obj: JobData, ctx: any) => {
 	try {
-		const [resOne, resAmount] = await Promise.all([buyRequest(invId, 1, obj), buyRequest(invId, amount, obj)])
+		const resAmount = await buyRequest(invId, amount, obj)
 		if (resAmount.status === 200) return amount
-		else if (resOne.status === 200) return 1
-		else return 0
+		const resOne = await buyRequest(invId, 1, obj)
+		if (resOne.status === 200) return 1
+		return 0
 	} catch (e) {
 			if (axios.isAxiosError(e)) e?.response?.status === 401 && ctx.reply("Request failed. Your token is probably wrong")
+			console.log(e)
 			return 0
 	}
   
