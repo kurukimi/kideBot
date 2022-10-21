@@ -27,8 +27,8 @@ export const createJob = async (url: string, token: string, ctx: any) => {
 		};
 		jobsByChat[obj.userId] = [...(jobsByChat[obj.userId] ? jobsByChat[obj.userId] : []), obj]
 		const dateNow = new Date().getTime();
-		if (dateNow < dateSales.getTime()) {
-			const tOut = setTimeout(requestLoop, (dateSales.getTime() - dateNow), urlSuffix, obj, ctx);
+		if (dateNow - 2000 < dateSales.getTime()) {
+			const tOut = setTimeout(requestLoop, (dateSales.getTime() - dateNow - 2000), urlSuffix, obj, ctx);
 			jobs[id] = tOut;
 			ctx.reply(`job "${obj.jobName}" scheduled at ${obj.date}`)
 		} else {
@@ -83,7 +83,7 @@ const sendRequest = async (data: kideResponse, obj: JobData, ctx: any) => {
 		return await requestJob(data, obj, ctx);
   } catch (e) {
 		console.log(e as Error);
-		await new Promise((resolve) => setTimeout(resolve, 500))
+		await new Promise((resolve) => setTimeout(resolve, 200))
 		return false
   }
 }
@@ -115,10 +115,10 @@ const requestJob = async (data: kideResponse, obj: JobData, ctx: any) => {
 
 const buyTicket = async (invId: string, amount: number, obj: JobData, ctx: any) => {
 	try {
-		const resAmount = await buyRequest(invId, amount, obj)
-		if (resAmount.status === 200) return amount
-		const resOne = await buyRequest(invId, 1, obj)
-		if (resOne.status === 200) return 1
+		const resAmount = await Promise.all(Array(5).fill(await buyRequest(invId, amount, obj)))
+		if (resAmount.some(res => res.status === 200)) return amount
+		const resOne = await Promise.all(Array(5).fill(await buyRequest(invId, 1, obj)))
+		if (resOne.some(res => res.status === 200)) return 1
 		return 0
 	} catch (e) {
 			if (axios.isAxiosError(e)) {
